@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>활동 사진 - 복성고 천문 & 항공우주 동아리</title>
+    <style>
+        body { margin:0; font-family:Arial; background:#0b0f2b; color:white; }
+        header { background: linear-gradient(to right,#0d1b52,#1b2f80); padding:20px; text-align:center; }
+        .auth-bar { text-align: left; padding: 10px 20px; background: #070a1d; font-size: 14px; }
+        .auth-bar button { padding: 5px 10px; margin-left: 10px; border-radius: 5px; border: none; background: #3a5aff; color: white; cursor: pointer; font-weight: bold; }
+        nav { background-color: #11153a; padding: 10px; text-align: center; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #7fc7ff; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; padding-bottom: 60px; }
+        .card { background:#161b4a; padding:15px; border-radius:10px; margin-bottom:20px; border: 1px solid #2d367a; }
+        input, button { padding:8px; margin:5px 0; border-radius: 5px; border: none; }
+        .upload-btn { background: #3a5aff; color: white; cursor: pointer; font-weight: bold; }
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .photo-card { background:#161b4a; padding:15px; border-radius:10px; text-align: center; border: 1px solid #2d367a; }
+        .photo-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 5px; margin-bottom: 10px; }
+        .download-btn { display: inline-block; background: #28a745; text-decoration: none; color: white; padding: 8px 15px; border-radius: 5px; font-size: 14px; margin-top: 5px; }
+        .delete-btn { background: #ff4d4d; color: white; padding: 8px 15px; border-radius: 5px; font-size: 14px; margin-top: 5px; cursor: pointer; }
+        .hidden { display: none; }
+        .info-text { font-size: 12px; color: #7fc7ff; margin-bottom: 10px; }
+        footer { position: fixed; bottom: 0; width: 100%; background: #11153a; text-align: center; padding: 10px; color: #aaa; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="auth-bar">
+    <span id="userStatus">불러오는 중...</span>
+    <button id="loginBtn" onclick="location.href='login.html'">로그인</button>
+    <button id="logoutBtn" class="hidden">로그아웃</button>
+</div>
+
+<header>
+    <h1>활동 및 천체 사진 게시판</h1>
+</header>
+
+
+<div class="container">
+    <div id="uploadSection" class="card hidden" style="text-align: center;">
+    <h3>새 사진 등록</h3>
+    <p class="info-text">사진을<a href="https://imgbb.com/" target="_blank" style="color:white;">ImgBB</a>에 올린 후 <b>이미지 주소</b>를 복사해 등록해 주세요.</p>
+    <p>사진 업로드 후 사진을 클릭하고 원본 이미지(링크)에서 html의 'img scr='다음에 나오는 링크.jpg 링크를 입력해 주세요</p>
+
+    <div style="margin-bottom: 15px;">
+        <img id="imagePreview" src="" style="max-width: 200px; max-height: 200px; border-radius: 10px; display: none; margin: 0 auto; border: 2px dashed #3a5aff;">
+        <p id="previewText" style="font-size: 12px; color: #aaa;">주소를 입력하면 여기에 미리보기가 나타납니다.</p>
+    </div>
+
+    <input type="text" id="imageUrlInput" placeholder="이미지 직접 링크 주소 (http://.../image.jpg)" style="width: 80%;" oninput="updatePreview()"><br>
+    <input type="text" id="imageTitle" placeholder="사진 제목을 입력하세요" style="width: 80%;">
+    <button class="upload-btn" id="doRegister">등록하기</button>
+</div>
+
+    <div class="photo-grid" id="photoGrid">
+        <p>사진을 불러오는 중...</p>
+    </div>
+</div>
+
+<footer>© 2026 복성고 천문 & 항공우주 동아리</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBX9JG1Ngnx_Pt02ROG2Hp69rnNbK0Pjp8",
+  authDomain: "clubquestion.firebaseapp.com",
+  databaseURL: "https://clubquestion-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "clubquestion",
+  storageBucket: "clubquestion.firebasestorage.app",
+  messagingSenderId: "730586449237",
+  appId: "1:730586449237:web:81b733cf9fc3a5b67fdbdc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const ADMIN_EMAIL = "2jw5464@gmail.com";
+
+let currentUser = null;
+
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+        document.getElementById("userStatus").innerText = `${user.email.split('@')[0]}님 접속 중`;
+        document.getElementById("loginBtn").classList.add("hidden");
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("uploadSection").classList.remove("hidden");
+    } else {
+        document.getElementById("userStatus").innerText = "비로그인 상태 (구경만 가능)";
+        document.getElementById("loginBtn").classList.remove("hidden");
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("uploadSection").classList.add("hidden");
+    }
+    loadPhotos();
+});
+
+document.getElementById("logoutBtn").onclick = () => {
+    if(confirm("로그아웃 하시겠습니까?")) auth.signOut();
+};
+
+// 사진 등록 기능 (Storage 사용 안 함)
+document.getElementById("doRegister").onclick = async () => {
+    const url = document.getElementById("imageUrlInput").value;
+    const title = document.getElementById("imageTitle").value;
+
+    if (!url || !title) return alert("주소와 제목을 모두 입력해주세요.");
+    if (!url.startsWith("http")) return alert("올바른 이미지 주소를 입력해주세요.");
+
+    try {
+        await db.ref('photos_link').push({
+            title: title,
+            url: url,
+            email: currentUser.email,
+            createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        alert("등록 성공!");
+        document.getElementById("imageUrlInput").value = "";
+        document.getElementById("imageTitle").value = "";
+    } catch (e) {
+        alert("에러 발생: " + e.message);
+    }
+};
+
+// 입력창에 주소를 넣을 때마다 실행되는 함수
+function updatePreview() {
+    const url = document.getElementById("imageUrlInput").value;
+    const previewImg = document.getElementById("imagePreview");
+    const previewText = document.getElementById("previewText");
+
+    // 주소가 http로 시작하는지 확인
+    if (url.startsWith("http")) {
+        previewImg.src = url;
+        previewImg.style.display = "block"; // 이미지 보이기
+        previewText.style.display = "none"; // 안내 문구 숨기기
+        
+        // 만약 이미지 주소가 잘못되어 로드에 실패할 경우 처리
+        previewImg.onerror = function() {
+            this.style.display = "none";
+            previewText.style.display = "block";
+            previewText.innerText = "유효하지 않은 이미지 주소입니다.";
+            previewText.style.color = "#ff4d4d";
+        };
+    } else {
+        previewImg.style.display = "none";
+        previewText.style.display = "block";
+        previewText.innerText = "주소를 입력하면 여기에 미리보기가 나타납니다.";
+        previewText.style.color = "#aaa";
+    }
+}
+
+function loadPhotos() {
+    const photoGrid = document.getElementById("photoGrid");
+    db.ref('photos_link').orderByChild('createdAt').on('value', snapshot => {
+        photoGrid.innerHTML = "";
+        const data = snapshot.val();
+        if (!data) {
+            photoGrid.innerHTML = "<p>등록된 사진이 없습니다.</p>";
+            return;
+        }
+        const list = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
+        list.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "photo-card";
+            let deleteBtn = (currentUser && currentUser.email === ADMIN_EMAIL) ? 
+                `<button class="delete-btn" onclick="deletePhoto('${item.id}')">삭제</button>` : "";
+
+            card.innerHTML = `
+                <img src="${item.url}" onerror="this.src='https://via.placeholder.com/300?text=Invalid+Link'">
+                <h4>${item.title}</h4>
+                <a href="${item.url}" target="_blank" class="download-btn">원본 보기</a>
+                ${deleteBtn}
+            `;
+            photoGrid.appendChild(card);
+        });
+    });
+}
+
+window.deletePhoto = async (id) => {
+    if (confirm("정말 삭제하시겠습니까?")) {
+        await db.ref('photos_link/' + id).remove();
+        alert("삭제되었습니다.");
+    }
+};
+</script>
+</body>
+</html>

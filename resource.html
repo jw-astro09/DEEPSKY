@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>자료실 - 복성고 천문 & 항공우주 동아리</title>
+    <style>
+        body { margin:0; font-family:Arial; background:#0b0f2b; color:white; }
+        header { background: linear-gradient(to right,#0d1b52,#1b2f80); padding:20px; text-align:center; }
+        .auth-bar { text-align: left; padding: 10px 20px; background: #070a1d; font-size: 14px; }
+        .auth-bar button { padding: 5px 10px; margin-left: 10px; border-radius: 5px; border: none; background: #3a5aff; color: white; cursor: pointer; }
+        nav { background-color: #11153a; padding: 10px; text-align: center; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .card { background:#161b4a; padding:20px; border-radius:10px; margin-bottom:20px; border: 1px solid #2d367a; }
+        input { padding:10px; margin:5px 0; border-radius: 5px; border: none; width: 95%; }
+        .btn-main { background: #3a5aff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        
+        /* 자료 리스트 스타일 */
+        .resource-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .resource-list th, .resource-list td { padding: 15px; text-align: left; border-bottom: 1px solid #2d367a; }
+        .resource-list th { background: #0d1b52; color: #7fc7ff; }
+        .download-link { background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px; font-size: 13px; }
+        .delete-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
+        .hidden { display: none; }
+        footer { text-align: center; padding: 20px; color: #aaa; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="auth-bar">
+    <span id="userStatus">불러오는 중...</span>
+    <button id="logoutBtn" class="hidden">로그아웃</button>
+</div>
+
+<header>
+    <h1>동아리 학습 자료실</h1>
+    <p>관측 자료, 학습 유인물, 프로그램 등을 공유하세요.</p>
+</header>
+
+<div class="container">
+    <div id="uploadSection" class="card hidden">
+        <h3 style="margin-top:0;"> 새 자료 등록</h3>
+        <p style="font-size:12px; color:#7fc7ff;">* 파일을 구글 드라이브 등에 올린 후 공유 링크를 넣어주세요.</p>
+        <input type="text" id="resTitle" placeholder="자료 제목 (260205 ppt 자료)">
+        <input type="text" id="resUrl" placeholder="다운로드 링크 (https://https://drive.google.com/....)">
+        <button class="btn-main" id="btnSave">자료실에 올리기</button>
+    </div>
+
+    <div class="card">
+        <table class="resource-list">
+            <thead>
+                <tr>
+                    <th>제목</th>
+                    <th>올린이</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody id="resTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<footer>© 2026 복성고 천문 & 항공우주 동아리</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// Firebase 설정 (기존과 동일하게 유지)
+const firebaseConfig = {
+  apiKey: "AIzaSyBX9JG1Ngnx_Pt02ROG2Hp69rnNbK0Pjp8",
+  authDomain: "clubquestion.firebaseapp.com",
+  databaseURL: "https://clubquestion-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "clubquestion",
+  storageBucket: "clubquestion.firebasestorage.app",
+  messagingSenderId: "730586449237",
+  appId: "1:730586449237:web:81b733cf9fc3a5b67fdbdc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const ADMIN_EMAIL = "2jw5464@gmail.com";
+
+let currentUser = null;
+
+// 로그인 상태 감지
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+        document.getElementById("userStatus").innerText = `${user.email.split('@')[0]}님 접속 중`;
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("uploadSection").classList.remove("hidden");
+    } else {
+        document.getElementById("userStatus").innerText = "로그인 후 자료를 등록할 수 있습니다.";
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("uploadSection").classList.add("hidden");
+    }
+    loadResources();
+});
+
+// 자료 등록 함수
+document.getElementById("btnSave").onclick = async () => {
+    const title = document.getElementById("resTitle").value;
+    const url = document.getElementById("resUrl").value;
+
+    if(!title || !url) return alert("제목과 링크를 입력하세요.");
+
+    try {
+        await db.ref('resources').push({
+            title: title,
+            url: url,
+            owner: currentUser.email,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        alert("자료가 등록되었습니다.");
+        document.getElementById("resTitle").value = "";
+        document.getElementById("resUrl").value = "";
+    } catch(e) {
+        alert("권한 오류: 데이터베이스 규칙을 확인하세요.");
+    }
+};
+
+// 자료 목록 불러오기
+function loadResources() {
+    const tableBody = document.getElementById("resTableBody");
+    db.ref('resources').on('value', snapshot => {
+        tableBody.innerHTML = "";
+        const data = snapshot.val();
+        if(!data) {
+            tableBody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>등록된 자료가 없습니다.</td></tr>";
+            return;
+        }
+
+        Object.keys(data).forEach(key => {
+            const item = data[key];
+            const row = document.createElement("tr");
+            
+            // 삭제 버튼 (관리자 또는 본인만)
+            let deleteBtn = "";
+            if(currentUser && (currentUser.email === ADMIN_EMAIL || currentUser.email === item.owner)) {
+                deleteBtn = `<button class="delete-btn" onclick="deleteRes('${key}')">삭제</button>`;
+            }
+
+            row.innerHTML = `
+                <td>${item.title}</td>
+                <td style="font-size:12px; color:#aaa;">${item.owner.split('@')[0]}</td>
+                <td>
+                    <a href="${item.url}" target="_blank" class="download-link">다운로드</a>
+                    ${deleteBtn}
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    });
+}
+
+// 자료 삭제 함수
+window.deleteRes = (key) => {
+    if(confirm("이 자료를 삭제하시겠습니까?")) {
+        db.ref('resources/' + key).remove();
+    }
+};
+
+document.getElementById("logoutBtn").onclick = () => auth.signOut();
+</script>
+</body>
+</html>
