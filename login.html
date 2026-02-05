@@ -1,99 +1,207 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>로그인</title>
-<style>
-body {
-  background:#0b0f2b;
-  color:white;
-  font-family:Arial;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.card {
-  background:#161b4a;
-  padding:30px;
-  border-radius:10px;
-  width:300px;
-  text-align:center;
-}
-input, button {
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - DEEP SKY</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0b0f2b;
+            color: white;
+            font-family: "Segoe UI", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-footer {
-  position: fixed;
-  bottom: 8px;
-  width: 100%;
-  text-align: center;
-  color: #aaa;
-  font-size: 12px;
-}
+        /* 상단 바 (홈으로 돌아가기 위한 로고 영역) */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: #070a1d;
+            border-bottom: 1px solid #1b2f80;
+        }
 
-</style>
+        .logo-area {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .logo-area img {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+
+        .logo-area span {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* 중앙 로그인 카드 */
+        .login-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 50px;
+        }
+
+        .card {
+            background: #161b4a;
+            padding: 40px;
+            border-radius: 15px;
+            width: 320px;
+            text-align: center;
+            border: 1px solid #2d367a;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #7fc7ff;
+            font-size: 24px;
+            margin-bottom: 25px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #1b2f80;
+            background: #0b0f2b;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3a5aff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login-btn {
+            background: #3a5aff;
+            color: white;
+        }
+
+        .login-btn:hover {
+            background: #2847d6;
+        }
+
+        .signup-btn {
+            background: transparent;
+            color: #7fc7ff;
+            border: 1px solid #3a5aff;
+            margin-top: 5px;
+        }
+
+        .signup-btn:hover {
+            background: rgba(58, 90, 255, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #888;
+            font-size: 12px;
+            background: #070a1d;
+            border-top: 1px solid #1b2f80;
+        }
+    </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>로그인 / 회원가입</h2>
-  <input id="name" placeholder="이름">
-  <input id="email" placeholder="이메일">
-  <input id="password" type="password" placeholder="비밀번호">
-  <button onclick="signup()">회원가입</button>
-  <button onclick="login()">로그인</button>
+<div class="top-bar">
+    <a href="index.html" class="logo-area">
+        <img src="logo.png" alt="로고" onerror="this.src='https://via.placeholder.com/30?text=★'"> 
+        <span>DEEP SKY</span>
+    </a>
 </div>
+
+<div class="login-container">
+    <div class="card">
+        <h2>LOGIN</h2>
+        <input id="name" placeholder="이름">
+        <input id="email" type="email" placeholder="이메일">
+        <input id="password" type="password" placeholder="비밀번호">
+        
+        <button class="login-btn" onclick="login()">로그인</button>
+        <button class="signup-btn" onclick="signup()">회원가입</button>
+        
+        <p style="font-size: 12px; color: #aaa; margin-top: 20px;">
+            * 로그인을 하시면 동아리 활동 소식을 <br>더 빠르게 확인하실 수 있습니다.
+        </p>
+    </div>
+</div>
+
+<footer>
+    © DEEP SKY(복성고 과학 동아리) | All rights reserved | Designed by jw-astro09
+</footer>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
+// Firebase 설정 (기존 정보 유지)
 const firebaseConfig = {
-  apiKey: "AIzaSyBX9JG1Ngnx_Pt02ROG2Hp69rnNbK0Pjp8",
-  authDomain: "clubquestion.firebaseapp.com",
-  projectId: "clubquestion"
+    apiKey: "AIzaSyBX9JG1Ngnx_Pt02ROG2Hp69rnNbK0Pjp8",
+    authDomain: "clubquestion.firebaseapp.com",
+    projectId: "clubquestion"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
 function signup(){
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const pw = document.getElementById("password").value;
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const pw = document.getElementById("password").value;
 
-  auth.createUserWithEmailAndPassword(email, pw)
-    .then(result=>{
-      return result.user.updateProfile({displayName:name});
-    })
-    .then(()=>{
-      alert("회원가입 완료!");
-      location.href="question.html";
-    })
-    .catch(err=>alert(err.message));
+    if(!name || !email || !pw) return alert("모든 항목을 입력해주세요.");
+
+    auth.createUserWithEmailAndPassword(email, pw)
+        .then(result => {
+            return result.user.updateProfile({displayName: name});
+        })
+        .then(() => {
+            alert("회원가입 완료! 환영합니다.");
+            location.href="index.html"; // 가입 후 메인으로 이동
+        })
+        .catch(err => alert("회원가입 실패: " + err.message));
 }
 
 function login(){
-  const email = document.getElementById("email").value;
-  const pw = document.getElementById("password").value;
+    const email = document.getElementById("email").value;
+    const pw = document.getElementById("password").value;
 
-  auth.signInWithEmailAndPassword(email, pw)
-    .then(()=>{
-      alert("로그인 성공!");
-      location.href="index.html";
-    })
-    .catch(err=>alert(err.message));
+    if(!email || !pw) return alert("이메일과 비밀번호를 입력해주세요.");
+
+    auth.signInWithEmailAndPassword(email, pw)
+        .then(() => {
+            alert("로그인 성공!");
+            location.href="index.html";
+        })
+        .catch(err => alert("로그인 실패: " + err.message));
 }
 </script>
 
-<footer>
-© DEEP SKY(복성고 과학 동아리) | All rights reserved | Designed by Chatgpt, Gemini, jw-astro09
-</footer>
-
 </body>
 </html>
-
