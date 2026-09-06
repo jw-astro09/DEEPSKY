@@ -1,4 +1,4 @@
-import { apiFetch, auth, authHeaders, getCurrentProfile, normalizeSafeLinkUrl } from "./common.js";
+import { apiFetch, apiFetchUrl, auth, authHeaders, getCurrentProfile, normalizeSafeLinkUrl } from "./common.js";
 import { appendCommentReportButton, setupPostTools } from "./post-tools.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 const COLLECTION = "resources";
@@ -244,7 +244,7 @@ let currentUser = null;
                 previewWindow.document.body.textContent = '파일을 불러오는 중입니다...';
             }
             const requestUrl = await resolveAttachmentUrl(url, filename, mode);
-            const res = await fetch(requestUrl, { headers: await getHeaders() });
+            const res = await apiFetchUrl(requestUrl, { headers: await getHeaders() });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.error || '파일을 열 수 없습니다.');

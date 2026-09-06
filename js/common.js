@@ -151,6 +151,16 @@ export async function apiFetch(path, options = {}) {
     throw new Error("사용 가능한 API 서버가 없습니다.");
 }
 
+// Use the normal tunnel failover for same-origin API file URLs as well as
+// JSON requests. Direct fetch() would keep using an expired ngrok origin.
+export async function apiFetchUrl(url, options = {}) {
+    const target = new URL(url, API_BASE_URL);
+    if (target.pathname.startsWith("/api/")) {
+        return apiFetch(`${target.pathname}${target.search}`, options);
+    }
+    return fetch(target.href, options);
+}
+
 const SAFE_LOGO_ASSET_PATTERN = /^(?:logo\.png|assets\/logos\/[a-z0-9-]+\.png)$/;
 
 export async function applySiteBranding() {
